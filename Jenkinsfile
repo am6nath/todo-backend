@@ -45,18 +45,21 @@ pipeline {
             steps {
                 bat """
                 echo Waiting for MySQL to be ready...
+                set RETRIES=0
 
-                for /L %%i in (1,1,30) do (
-                    docker exec %MYSQL_CONT% mysqladmin ping -h "localhost" -u root -p%MYSQL_PWD% --silent
-                    if not errorlevel 1 (
-                        echo MySQL is ready!
-                        goto :ready
-                    )
-                    ping 127.0.0.1 -n 2 > nul
+                :loop
+                docker exec %MYSQL_CONT% mysqladmin ping -h localhost -u root -p%MYSQL_PWD% --silent 2>nul
+                if not errorlevel 1 (
+                    echo MySQL is ready!
+                    goto ready
                 )
-
-                echo MySQL not ready in time!
-                exit /b 1
+                set /a RETRIES+=1
+                if %RETRIES% GEQ 30 (
+                    echo MySQL not ready after 30 attempts!
+                    exit /b 1
+                )
+                ping 127.0.0.1 -n 3 > nul
+                goto loop
 
                 :ready
                 """

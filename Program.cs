@@ -18,7 +18,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularCorsPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -72,17 +72,30 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Retry loop: wait for MySQL to be ready before running EnsureCreated
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.EnsureCreated();
+    var maxRetries = 30;
+    for (int i = 0; i < maxRetries; i++)
+    {
+        try
+        {
+            db.Database.EnsureCreated();
+            Console.WriteLine("Database connection established and schema ensured.");
+            break;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database connection attempt {i + 1}/{maxRetries} failed: {ex.Message}");
+            if (i == maxRetries - 1) throw;
+            Thread.Sleep(2000);
+        }
+    }
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("AngularCorsPolicy");
 
