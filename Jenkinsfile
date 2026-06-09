@@ -28,9 +28,9 @@ pipeline {
         stage('Start MySQL') {
             steps {
                 bat """
-                docker network create %NETWORK% 2>nul
+                docker network create %NETWORK% 2>nul || ver > nul
 
-                docker rm -f %MYSQL_CONT% 2>nul
+                docker rm -f %MYSQL_CONT% 2>nul || ver > nul
 
                 docker run -d --name %MYSQL_CONT% --network %NETWORK% --label com.docker.compose.project=todoapp ^
                     -e MYSQL_ROOT_PASSWORD=%MYSQL_PWD% ^
@@ -66,7 +66,7 @@ pipeline {
         stage('Run API') {
             steps {
                 bat """
-                docker rm -f %API_CONT% 2>nul
+                docker rm -f %API_CONT% 2>nul || ver > nul
 
                 docker run -d --name %API_CONT% --network %NETWORK% --label com.docker.compose.project=todoapp ^
                     -e "ConnectionStrings__DefaultConnection=Server=%MYSQL_CONT%;Database=%MYSQL_DB%;User=root;Password=%MYSQL_PWD%;" ^
