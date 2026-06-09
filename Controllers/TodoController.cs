@@ -113,6 +113,7 @@ namespace todoapp_backend.Controllers
             return CreatedAtAction(nameof(GetTodoById), new { id = todo.Id }, responseDto);
         }
 
+        [HttpPost("toggle/{id:int}")]
         [HttpPut("{id:int}")]
         public async Task<ActionResult> UpdateTodo(int id, [FromBody] TodoUpdateDto updateDto)
         {
@@ -126,7 +127,6 @@ namespace todoapp_backend.Controllers
             todo.Title = updateDto.Title.Trim();
             todo.Description = updateDto.Description?.Trim() ?? string.Empty;
 
-            // Handle transition of completion state to set completed timestamp
             if (updateDto.IsCompleted && !todo.IsCompleted)
             {
                 todo.IsCompleted = true;

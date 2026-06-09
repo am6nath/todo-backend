@@ -7,18 +7,13 @@ using todoapp_backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Database Context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// Add Token Service
 builder.Services.AddScoped<ITokenService, TokenService>();
-
-// Add Controllers
 builder.Services.AddControllers();
 
-// Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularCorsPolicy", policy =>
@@ -29,7 +24,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Configure JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -46,13 +40,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configure API Explorer and Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Todo API", Version = "v1" });
     
-    // Configure Bearer Token input in Swagger UI
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: \"Bearer 12345abcdef\"",
@@ -80,7 +72,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Auto-create Database and Tables on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -95,11 +86,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AngularCorsPolicy");
 
-// Enable Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map Controller routes
 app.MapControllers();
 
 app.Run();
