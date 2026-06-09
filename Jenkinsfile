@@ -21,7 +21,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t %IMAGE% ."
+                bat "docker build --network=host -t %IMAGE% ."
             }
         }
 
