@@ -90,5 +90,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/", () => Results.Ok(new { status = "Healthy", message = "Todo API is running" }));
 
 app.Run();
