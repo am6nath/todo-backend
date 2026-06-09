@@ -25,11 +25,16 @@ namespace todoapp_backend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TodoDto>>> GetTodos()
+        public async Task<ActionResult> GetTodos([FromQuery] int page = 1, [FromQuery] int pageSize = 5)
         {
             var userId = GetUserId();
-            var todos = await _context.Todos
-                .Where(t => t.UserId == userId)
+            var query = _context.Todos.Where(t => t.UserId == userId);
+            var totalCount = await query.CountAsync();
+
+            var todos = await query
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(t => new TodoDto
                 {
                     Id = t.Id,
@@ -42,7 +47,14 @@ namespace todoapp_backend.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(todos);
+            return Ok(new
+            {
+                items = todos,
+                totalCount = totalCount,
+                page = page,
+                pageSize = pageSize,
+                totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+            });
         }
 
         [HttpGet("{id:int}")]

@@ -1,53 +1,82 @@
 pipeline {
+
     agent any
 
+    environment {
+        IMAGE = "todo-backend:${BUILD_NUMBER}"
+        NETWORK = "app-net"
+        MYSQL_CONT = "todo-mysql"
+        API_CONT = "todo-backend"
+        MYSQL_PWD = "root"
+        MYSQL_DB = "tododb"
+    }
+
     stages {
+
         stage('Checkout') {
             steps {
-                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
-        stage('Build DB Service') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building MySQL Database service...'
-                sh 'docker compose build todo-mysql'
+                bat "docker build -t %IMAGE% ."
             }
         }
 
-        stage('Build Backend Service') {
+        stage('Start MySQL') {
             steps {
-                echo 'Building C# .NET Core Backend service...'
-                sh 'docker compose build backend'
+                bat """
+                docker network create %NETWORK% 2>nul
+
+                docker rm -f %MYSQL_CONT% 2>nul
+
+                docker run -d --name %MYSQL_CONT% --network %NETWORK% ^
+                    -e MYSQL_ROOT_PASSWORD=%MYSQL_PWD% ^
+                    -e MYSQL_DATABASE=%MYSQL_DB% ^
+                    -p 3306:3306 ^
+                    mysql:8.0
+                """
             }
         }
 
-        stage('Build Frontend Service') {
+        stage('Wait for MySQL') {
             steps {
-                echo 'Building Angular Frontend service...'
-                sh 'docker compose build frontend'
+                bat """
+                echo Waiting for MySQL to be ready...
+
+                for /L %%i in (1,1,30) do (
+                    docker exec %MYSQL_CONT% mysqladmin ping -h "localhost" -u root -p%MYSQL_PWD% --silent
+                    if not errorlevel 1 (
+                        echo MySQL is ready!
+                        goto :ready
+                    )
+                    ping 127.0.0.1 -n 2 > nul
+                )
+
+                echo MySQL not ready in time!
+                exit /b 1
+
+                :ready
+                """
             }
         }
 
-        stage('Orchestrate Stack') {
+        stage('Run API') {
             steps {
-                echo 'Starting all orchestrated containers...'
-                sh 'docker compose up -d'
-                sh 'docker compose ps'
-            }
-        }
-    }
+                bat """
+                docker rm -f %API_CONT% 2>nul
 
-    post {
-        always {
-            echo 'CI/CD pipeline completed.'
-        }
-        success {
-            echo 'Deployment successful!'
-        }
-        failure {
-            echo 'Pipeline execution failed. Please verify build logs.'
+                docker run -d --name %API_CONT% --network %NETWORK% ^
+                    -e "ConnectionStrings__DefaultConnection=Server=%MYSQL_CONT%;Database=%MYSQL_DB%;User=root;Password=%MYSQL_PWD%;" ^
+                    -e "Jwt__Key=SuperSecretKeyForTodoApp123456!!!PleaseChangeMeInProduction" ^
+                    -e "Jwt__Issuer=todoapp-backend" ^
+                    -e "Jwt__Audience=todoapp-frontend" ^
+                    -p 5000:8080 ^
+                    %IMAGE%
+                """
+            }
         }
     }
 }
