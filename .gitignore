@@ -1,0 +1,16 @@
+# Core build artifacts
+bin/
+obj/
+
+# Local configuration files
+appsettings.Development.json
+*.user
+*.userprefs
+*.suo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Docker files
+.dockerignore
