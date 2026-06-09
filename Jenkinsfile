@@ -11,6 +11,10 @@ pipeline {
         MYSQL_DB = "tododb"
     }
 
+    triggers {
+        pollSCM('* * * * *')
+    }
+
     stages {
 
         stage('Checkout') {
