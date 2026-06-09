@@ -25,7 +25,7 @@ namespace todoapp_backend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetTodos([FromQuery] int page = 1, [FromQuery] int pageSize = 5)
+        public async Task<ActionResult> GetTodos([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = GetUserId();
             var query = _context.Todos.Where(t => t.UserId == userId);
