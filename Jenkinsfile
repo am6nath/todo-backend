@@ -73,7 +73,7 @@ pipeline {
                     -e "Jwt__Key=SuperSecretKeyForTodoApp123456!!!PleaseChangeMeInProduction" ^
                     -e "Jwt__Issuer=todoapp-backend" ^
                     -e "Jwt__Audience=todoapp-frontend" ^
-                    -p 5000:8080 ^
+                    -p 5076:8080 ^
                     %IMAGE%
                 """
             }
