@@ -1,46 +1,49 @@
 version: '3.8'
 
 services:
-  db:
+  todo-mysql:
     image: mysql:8.0
-    container_name: todo_mysql
+    container_name: todo-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: tododb
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 3s
       retries: 5
 
   backend:
     build:
-      context: ./TodoApi
+      context: .
       dockerfile: Dockerfile
-    container_name: todo_backend
+    container_name: todo-backend
     restart: always
     ports:
-      - "5000:8080" 
+      - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=db;Database=tododb;User=root;Password=rootpassword;
+      - ConnectionStrings__DefaultConnection=Server=todo-mysql;Database=tododb;User=root;Password=root;
+      - Jwt__Key=SuperSecretKeyForTodoApp123456!!!PleaseChangeMeInProduction
+      - Jwt__Issuer=todoapp-backend
+      - Jwt__Audience=todoapp-frontend
     depends_on:
-      db:
-        condition: service_healthy 
+      todo-mysql:
+        condition: service_healthy
 
   frontend:
     build:
-      context: ./todo-frontend
+      context: ../todoapp-frontend
       dockerfile: Dockerfile
-    container_name: todo_frontend
+    container_name: todo-frontend
     restart: always
     ports:
-      - "4200:80" 
+      - "4200:80"
     depends_on:
       - backend
 
