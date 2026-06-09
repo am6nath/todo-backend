@@ -21,7 +21,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build --network=host -t %IMAGE% ."
+                bat "docker build -t %IMAGE% ."
             }
         }
 
@@ -32,7 +32,7 @@ pipeline {
 
                 docker rm -f %MYSQL_CONT% 2>nul
 
-                docker run -d --name %MYSQL_CONT% --network %NETWORK% ^
+                docker run -d --name %MYSQL_CONT% --network %NETWORK% --label com.docker.compose.project=todoapp ^
                     -e MYSQL_ROOT_PASSWORD=%MYSQL_PWD% ^
                     -e MYSQL_DATABASE=%MYSQL_DB% ^
                     -p 3306:3306 ^
@@ -68,7 +68,7 @@ pipeline {
                 bat """
                 docker rm -f %API_CONT% 2>nul
 
-                docker run -d --name %API_CONT% --network %NETWORK% ^
+                docker run -d --name %API_CONT% --network %NETWORK% --label com.docker.compose.project=todoapp ^
                     -e "ConnectionStrings__DefaultConnection=Server=%MYSQL_CONT%;Database=%MYSQL_DB%;User=root;Password=%MYSQL_PWD%;" ^
                     -e "Jwt__Key=SuperSecretKeyForTodoApp123456!!!PleaseChangeMeInProduction" ^
                     -e "Jwt__Issuer=todoapp-backend" ^
